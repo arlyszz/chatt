@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0c11">
+<title>Mabar Chat</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{
+  --bg:#0a0c11;--card:#12151f;--line:#222838;--txt:#e7eaf2;--dim:#8b93a7;
+  --acc:#6ee7b7;--acc2:#7c9cff;--bad:#ff7b8a;--warn:#ffc46b;
+  --mine-bg:linear-gradient(135deg,#2a3a63,#382a5f);--mine-txt:#e7eaf2;
+  --other-bg:#1a2030;--other-txt:#e7eaf2;
+  --btn-bg:#1a2030;--btn-hover:#222a3e;--input-bg:#0d111a;
+  --page-bg:radial-gradient(900px 500px at 15% -10%,#1b2544 0,transparent 60%),radial-gradient(700px 400px at 110% 10%,#2a1b3f 0,transparent 60%),#0a0c11;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden}
+body{
+  height:var(--app-h,100dvh);color:var(--txt);
+  font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  background:var(--page-bg);display:flex;flex-direction:column;overflow:hidden;
+  transition:background .2s,color .2s;
+}
+.hidden{display:none!important}
+.muted{color:var(--dim)}
+.small{font-size:12px}
+.view{display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* AUTH */
+#view-auth{align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.auth-wrap{width:100%;max-width:400px}
+.brand{text-align:center;margin-bottom:16px}
+.brand-icon{font-size:44px}
+.brand h1{margin:4px 0 6px;font-size:22px}
+.brand p{margin:0;font-size:13px;color:var(--dim)}
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.008)),var(--card);
+  border:1px solid var(--line);border-radius:var(--r);padding:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+.tabs{display:flex;gap:4px;background:var(--input-bg);padding:4px;border-radius:10px;margin-bottom:16px}
+.tab{flex:1;background:transparent;border:none;color:var(--dim);padding:9px;border-radius:8px;
+  font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+.tab.active{background:var(--btn-bg);color:var(--txt)}
+.field-label{display:block;font-size:12px;color:var(--dim);margin:14px 0 6px;
+  text-transform:uppercase;letter-spacing:.4px}
+.text-input{
+  width:100%;padding:11px 13px;border-radius:10px;color:var(--txt);
+  background:var(--input-bg);border:1px solid var(--line);outline:none;
+  font-size:15px;font-family:inherit;
+}
+.text-input:focus{border-color:var(--acc2);box-shadow:0 0 0 3px rgba(124,156,255,.15)}
+.btn{
+  padding:11px 14px;border-radius:10px;cursor:pointer;font-weight:650;
+  font-size:14px;background:var(--btn-bg);color:var(--txt);border:1px solid var(--line);
+  transition:.15s;font-family:inherit;
+}
+.btn:hover:not(:disabled){background:var(--btn-hover)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{border:none;color:#07101f;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  box-shadow:0 8px 22px rgba(110,231,183,.25)}
+.btn.primary:hover:not(:disabled){filter:brightness(1.07)}
+.btn.small{padding:7px 11px;font-size:12.5px;border-radius:9px}
+.btn.danger{color:var(--bad);border-color:rgba(255,123,138,.3)}
+.btn.block{display:block;width:100%;text-align:center}
+.auth-info{
+  font-size:12.5px;line-height:1.55;color:var(--dim);
+  background:rgba(124,156,255,.06);border:1px solid rgba(124,156,255,.15);
+  padding:10px 12px;border-radius:9px;margin:10px 0 0;
+}
+.auth-info b{color:var(--txt)}
+.auth-info code{background:var(--input-bg);padding:1px 5px;border-radius:4px;
+  color:var(--acc);font-family:ui-monospace,monospace;font-size:12px}
+.auth-msg{color:var(--bad);font-size:13px;min-height:18px;margin:10px 0 0;line-height:1.5}
+.auth-submit{margin-top:14px;width:100%}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  border-bottom:1px solid var(--line);background:rgba(10,12,17,.55);
+  backdrop-filter:blur(8px);flex:0 0 auto;
+}
+.avatar-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+  color:#fff;font-weight:800;font-size:15px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.topbar-title{flex:1;font-weight:650;font-size:15px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-actions{display:flex;gap:6px}
+.icon-btn{width:38px;height:38px;border-radius:10px;cursor:pointer;
+  background:transparent;border:1px solid var(--line);color:var(--txt);
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:.15s;font-family:inherit;flex:0 0 auto}
+.icon-btn:hover{background:var(--btn-bg)}
+.icon-btn.send{background:linear-gradient(135deg,var(--acc),var(--acc2));
+  color:#06101d;border:none;font-weight:800}
+
+.main{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.pane{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#pane-lobby{padding:16px;overflow-y:auto;align-items:center;justify-content:center}
+#pane-lobby .card{width:100%;max-width:420px}
+#pane-lobby h2{margin:0 0 4px;font-size:18px}
+
+/* ROOM */
+.room-pane{display:flex;flex-direction:column;min-height:0;flex:1;position:relative}
+.room-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.room-code-label{font-size:13px;color:var(--dim)}
+.room-code-label b{color:var(--txt);font-family:ui-monospace,monospace}
+.status{font-size:11.5px;color:var(--warn);margin-top:2px}
+.status.ok{color:var(--acc)}
+.status.bad{color:var(--bad)}
+.room-bar-actions{display:flex;gap:6px;flex-wrap:wrap}
+
+.chat{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;
+  min-height:0;overscroll-behavior:contain}
+.chat::-webkit-scrollbar{width:8px}
+.chat::-webkit-scrollbar-thumb{background:#232a3c;border-radius:8px}
+
+.msg{max-width:82%;display:flex;flex-direction:column;gap:2px}
+.msg-from{font-size:11px;cursor:pointer;font-weight:600}
+.msg-from:hover{text-decoration:underline}
+.msg-bubble{background:var(--other-bg);color:var(--other-txt);
+  border:1px solid var(--line);padding:8px 12px;border-radius:12px;
+  font-size:14.5px;line-height:1.45;word-break:break-word;white-space:pre-wrap}
+.msg.mine{align-self:flex-end;align-items:flex-end}
+.msg.mine .msg-bubble{background:var(--mine-bg);color:var(--mine-txt);border-color:transparent}
+.msg.sys{align-self:center;font-size:12px;color:var(--dim);font-style:italic;
+  max-width:100%;text-align:center}
+.msg-time{font-size:10.5px;color:var(--dim);padding:0 4px}
+.sticker-msg .sticker-img{max-width:180px;border-radius:14px;display:block;
+  box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.msg.mine.sticker-msg .sticker-img{margin-left:auto}
+
+.media-msg .media-photo,.media-msg .media-video{
+  max-width:280px;max-height:320px;border-radius:12px;display:block;
+  background:#000;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer}
+.msg.mine.media-msg .media-photo,.msg.mine.media-msg .media-video{margin-left:auto}
+.media-msg .voice-audio{width:240px;max-width:100%;border-radius:22px;background:var(--other-bg)}
+.media-loading{background:var(--other-bg);color:var(--other-txt);
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:180px}
+.media-loading .media-icon{font-size:24px;margin-bottom:4px}
+.media-loading .media-label{font-size:12.5px;color:var(--dim)}
+.media-loading .progress-bar{height:4px;background:rgba(255,255,255,.08);
+  border-radius:2px;margin-top:8px;overflow:hidden}
+.media-loading .progress-fill{height:100%;width:0%;
+  background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .15s}
+.media-omitted{background:var(--other-bg);color:var(--dim);
+  border:1px dashed var(--line);padding:10px 14px;border-radius:12px;
+  font-size:12.5px;font-style:italic}
+
+.composer{display:flex;gap:6px;padding:10px 12px;border-top:1px solid var(--line);
+  background:rgba(10,12,17,.55);flex:0 0 auto;position:relative}
+.composer .text-input{flex:1;min-width:0}
+.attach-popup{position:absolute;bottom:64px;left:12px;
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:6px;display:flex;flex-direction:column;gap:4px;
+  box-shadow:0 12px 32px rgba(0,0,0,.5);z-index:20}
+.attach-popup button{display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:transparent;border:none;color:var(--txt);
+  font-family:inherit;font-size:14px;cursor:pointer;border-radius:8px;text-align:left}
+.attach-popup button:hover{background:var(--btn-bg)}
+
+.tap-bar{display:flex;align-items:center;gap:14px;padding:10px 14px 14px;
+  border-top:1px solid var(--line);background:rgba(124,156,255,.05);flex:0 0 auto}
+.tap-btn{width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  font-weight:800;font-size:11px;letter-spacing:.5px;color:#06101d;
+  background:radial-gradient(circle at 30% 25%,#9df5d3,var(--acc) 42%,var(--acc2) 100%);
+  box-shadow:0 8px 20px rgba(110,231,183,.3);transition:transform .08s;flex:0 0 auto}
+.tap-btn:active{transform:scale(.9)}
+.tap-btn.pop{animation:pop .22s ease-out}
+@keyframes pop{50%{transform:scale(1.12)}}
+.tap-info{font-size:13px;line-height:1.4}
+.tap-info b{color:var(--txt);font-size:18px}
+.tap-info b.pulse{animation:pop .3s ease-out}
+
+.typing-indicator{position:absolute;bottom:80px;left:14px;font-size:12px;color:var(--dim);
+  font-style:italic;background:rgba(26,32,48,.92);padding:4px 10px;
+  border-radius:10px;border:1px solid var(--line);pointer-events:none;
+  opacity:0;transition:opacity .2s;z-index:10}
+.typing-indicator.show{opacity:1}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;
+  display:none;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(4px)}
+.modal.show{display:flex}
+.modal-card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:20px;width:100%;max-width:420px;position:relative;
+  max-height:85vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.5);color:var(--txt)}
+.modal-card.wide{max-width:520px}
+.modal-card h2{margin:0 0 12px;font-size:18px}
+.modal-close{position:absolute;top:10px;right:10px;width:32px;height:32px;
+  border-radius:8px;background:transparent;border:1px solid var(--line);
+  color:var(--dim);cursor:pointer;font-size:14px;font-family:inherit}
+.modal-close:hover{background:var(--btn-bg);color:var(--txt)}
+
+.menu-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.menu-item{padding:12px 14px;border-radius:10px;background:var(--btn-bg);
+  border:1px solid var(--line);color:var(--txt);font-size:14.5px;
+  text-align:left;cursor:pointer;font-family:inherit}
+.menu-item:hover{background:var(--btn-hover)}
+
+.profile-view{text-align:center;padding:10px 0}
+.avatar-large{width:80px;height:80px;border-radius:50%;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:800;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.profile-view h2{margin:0 0 4px;font-size:20px}
+
+.history-list{display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow-y:auto}
+.history-item{padding:10px 12px;border-radius:10px;background:var(--btn-bg);
+  border:1px solid var(--line);cursor:pointer;transition:.15s}
+.history-item:hover{background:var(--btn-hover);border-color:var(--acc2)}
+
+.sticker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.sticker-thumb{width:100%;aspect-ratio:1;border-radius:10px;object-fit:cover;
+  cursor:pointer;border:1px solid var(--line);background:var(--input-bg);transition:.12s}
+.sticker-thumb:hover{transform:scale(1.05);border-color:var(--acc2)}
+
+.user-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;
+  border-radius:10px;background:var(--btn-bg);border:1px solid var(--line);
+  margin:4px 0;cursor:pointer}
+.user-chip:hover{background:var(--btn-hover)}
+.user-chip .dot{width:20px;height:20px;border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800}
+
+.theme-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.theme-opt{border:2px solid var(--line);border-radius:12px;padding:12px;
+  cursor:pointer;transition:.15s;text-align:center;font-size:13px;font-weight:600}
+.theme-opt:hover{border-color:var(--acc2)}
+.theme-opt.active{border-color:var(--acc);box-shadow:0 0 0 2px rgba(110,231,183,.25)}
+.theme-opt .swatch{width:100%;height:40px;border-radius:8px;margin-bottom:8px}
+
+.voice-record-box{text-align:center;padding:20px 0}
+.voice-record-box .mic{font-size:64px;margin-bottom:8px}
+.voice-timer{font-size:24px;font-family:ui-monospace,monospace;margin:12px 0}
+.rec-dot{display:inline-block;width:10px;height:10px;border-radius:50%;
+  background:var(--bad);margin-right:6px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);
+  background:#1d2436;border:1px solid var(--line);color:var(--txt);
+  padding:10px 16px;border-radius:10px;font-size:13px;z-index:200;
+  opacity:0;pointer-events:none;transition:.25s;max-width:90vw;
+  box-shadow:0 16px 40px rgba(0,0,0,.5);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:150;
+  display:none;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.lightbox.show{display:flex}
+.lightbox img,.lightbox video{max-width:100%;max-height:100%;border-radius:8px}
+
+@media(max-width:520px){
+  .chat{padding:10px}
+  .msg{max-width:88%}
+  .sticker-grid{grid-template-columns:repeat(3,1fr)}
+  .sticker-msg .sticker-img{max-width:150px}
+  .media-msg .media-photo,.media-msg .media-video{max-width:220px}
+  .room-bar-actions .btn{font-size:11.5px;padding:6px 9px}
+  .theme-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="view-auth" class="view">
+  <div class="auth-wrap">
+    <div class="brand">
+      <div class="brand-icon">💬</div>
+      <h1>Mabar Chat</h1>
+      <p>Voice · Foto · Video · Tanpa server</p>
+    </div>
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab" data-mode="register" type="button">Daftar</button>
+        <button class="tab" data-mode="login" type="button">Masuk</button>
+      </div>
+      <form id="auth-form" novalidate>
+        <label class="field-label" for="auth-username">Username</label>
+        <input class="text-input" id="auth-username" autocomplete="username"
+               placeholder="3-16 huruf/angka, contoh: budi" maxlength="16">
+        <label class="field-label" for="auth-password">Password</label>
+        <input class="text-input" id="auth-password" type="password"
+               placeholder="minimal 4 karakter" maxlength="64">
+        <div class="auth-info" id="auth-info"></div>
+        <button class="btn primary auth-submit" type="submit" id="auth-submit">Daftar Akun</button>
+        <p class="auth-msg" id="auth-msg"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="view-app" class="view hidden">
+  <header class="topbar">
+    <button id="btn-profile" class="avatar-btn" type="button"></button>
+    <div class="topbar-title" id="topbar-title">Mabar</div>
+    <div class="topbar-actions">
+      <button id="btn-fullscreen" class="icon-btn" title="Fullscreen" type="button">⛶</button>
+      <button id="btn-menu" class="icon-btn" title="Menu" type="button">☰</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div id="pane-lobby" class="pane">
+      <div class="card">
+        <h2>Masuk Room</h2>
+        <p class="muted small" style="margin:0 0 14px">
+          Isi kode room, lalu bagikan kode yang sama ke temanmu.
+          Nggak peduli satu wifi atau beda benua.
+        </p>
+        <label class="field-label" for="input-room-code">Kode Room</label>
+        <input class="text-input" id="input-room-code" maxlength="24"
+               placeholder="contoh: kucing123" autocomplete="off">
+        <button id="btn-enter-room" class="btn primary block" type="button"
+                style="margin-top:16px">Masuk Room</button>
+      </div>
+    </div>
+
+    <div id="pane-room" class="pane room-pane hidden">
+      <div class="room-bar">
+        <div style="flex:1;min-width:0">
+          <div class="room-code-label">Room <b id="room-code-display">-</b></div>
+          <div id="room-status" class="status">Menghubungkan...</div>
+        </div>
+        <div class="room-bar-actions">
+          <button id="btn-share" class="btn small" type="button">🔗 Salin</button>
+          <button id="btn-leave" class="btn small danger" type="button">Keluar</button>
+        </div>
+      </div>
+
+      <div id="chat" class="chat"></div>
+      <div id="typing" class="typing-indicator"></div>
+
+      <div class="composer">
+        <button id="btn-open-stickers" class="icon-btn" title="Stiker" type="button">😊</button>
+        <button id="btn-attach" class="icon-btn" title="Lampiran" type="button">📎</button>
+        <input class="text-input" id="input-chat" maxlength="1000"
+               placeholder="Ketik pesan..." autocomplete="off">
+        <button id="btn-send" class="icon-btn send" title="Kirim" type="button">➤</button>
+
+        <div id="attach-popup" class="attach-popup hidden">
+          <button data-attach="photo" type="button">📷 Foto</button>
+          <button data-attach="video" type="button">🎥 Video</button>
+          <button data-attach="voice" type="button">🎤 Rekam Suara</button>
+        </div>
+      </div>
+
+      <div class="tap-bar">
+        <button id="btn-tap" class="tap-btn" type="button">TEKAN</button>
+        <div class="tap-info">
+          Total: <b id="tap-count">0</b><br>
+          <span class="muted small">gak ada efek apa-apa</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div id="modal-menu" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Menu</h2>
+    <div class="menu-list">
+      <button class="menu-item" id="menu-users" type="button">👥 User Online</button>
+      <button class="menu-item" id="menu-theme" type="button">🎨 Ganti Tema</button>
+      <button class="menu-item" id="menu-history" type="button">📜 Riwayat Room</button>
+      <button class="menu-item" id="menu-logout" type="button">🚪 Keluar Akun</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-profile" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <div class="profile-view">
+      <div id="profile-avatar" class="avatar-large"></div>
+      <h2 id="profile-name">-</h2>
+      <p class="muted small" id="profile-meta"></p>
+    </div>
+    <button id="btn-open-changename" class="btn block" type="button"
+            style="margin-top:8px">✏️ Ganti Nama</button>
+  </div>
+</div>
+
+<div id="modal-changename" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Ganti Nama</h2>
+    <label class="field-label" for="input-newname">Nama baru</label>
+    <input class="text-input" id="input-newname" maxlength="16"
+           placeholder="3-16 huruf/angka/underscore">
+    <p id="changename-msg" class="auth-msg"></p>
+    <button id="btn-do-changename" class="btn primary block" type="button"
+            style="margin-top:12px">Simpan</button>
+  </div>
+</div>
+
+<div id="modal-users" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>User Online</h2>
+    <div id="users-list"></div>
+  </div>
+</div>
+
+<div id="modal-history" class="modal">
+  <div class="modal-card wide">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Riwayat Room</h2>
+    <div id="history-list" class="history-list"></div>
+  </div>
+</div>
+
+<div id="modal-stickers" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Stiker</h2>
+    <p class="muted small">Klik untuk kirim. Unggah gambar baru untuk bikin stiker.</p>
+    <div id="sticker-grid" class="sticker-grid"></div>
+    <label class="btn block" style="margin-top:12px;cursor:pointer">
+      📷 Unggah Gambar
+      <input id="sticker-file" type="file" accept="image/*" style="display:none">
+    </label>
+  </div>
+</div>
+
+<div id="modal-theme" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Ganti Tema</h2>
+    <div id="theme-grid" class="theme-grid"></div>
+  </div>
+</div>
+
+<div id="modal-voice" class="modal">
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button">✕</button>
+    <h2>Rekam Suara</h2>
+    <div id="voice-recording" class="voice-record-box">
+      <div class="mic">🎤</div>
+      <div class="voice-timer" id="voice-timer">00:00</div>
+      <button id="btn-voice-start" class="btn primary" type="button">Mulai Rekam</button>
+      <button id="btn-voice-stop" class="btn danger hidden" type="button"
+              style="margin-top:8px">■ Stop</button>
+      <p class="muted small" style="margin-top:12px">Maks ~2 menit. Butuh izin mikrofon.</p>
+    </div>
+    <div id="voice-preview" class="hidden">
+      <audio id="voice-audio" controls style="width:100%;margin:12px 0"></audio>
+      <div style="display:flex;gap:10px">
+        <button id="btn-voice-cancel" class="btn" type="button" style="flex:1">Ulangi</button>
+        <button id="btn-voice-send" class="btn primary" type="button" style="flex:1">Kirim</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox" class="lightbox"><div id="lightbox-content"></div></div>
+
+<input id="input-photo" type="file" accept="image/*" style="display:none">
+<input id="input-video" type="file" accept="video/*" style="display:none">
+
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   KONFIG
+   ============================================================ */
+const PEER_CFG = {
+  debug: 0,
+  config: {
+    iceServers: [
+      { urls: ['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302'] },
+      { urls: 'turn:openrelay.metered.ca:80',
+        username:'openrelayproject', credential:'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443',
+        username:'openrelayproject', credential:'openrelayproject' },
+      { urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+        username:'openrelayproject', credential:'openrelayproject' }
+    ]
+  }
+};
+
+const LS = {
+  users: 'mabar_v4_users',
+  session: 'mabar_v4_session',
+  stickers: 'mabar_v4_stickers',
+  history: 'mabar_v4_history',
+  theme: 'mabar_v4_theme'
+};
+
+const CHUNK_SIZE = 32 * 1024;
+const MAX_PHOTO = 15 * 1024 * 1024;
+const MAX_VIDEO = 12 * 1024 * 1024;
+const MAX_VOICE = 2 * 1024 * 1024;
+const IS_FILE = location.protocol === 'file:';
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const S = {
+  user: null,
+  peer: null,
+  conn: null,
+  conns: [],
+  users: [],
+  isHub: false,
+  code: '',
+  taps: 0,
+  roomActive: false,
+  roomHistory: [],
+  authMode: 'register',
+  lastTypingSent: 0,
+  typingTimeout: null,
+  reconnectAttempt: 0,
+  incomingMedia: new Map(),
+  mediaSending: false
+};
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24);
+const hueOf = str => {
+  let h = 0;
+  for (const c of String(str || 'x')) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+};
+const avatarGradient = name => {
+  const h = hueOf(name);
+  return `linear-gradient(135deg, hsl(${h} 65% 48%), hsl(${(h + 50) % 360} 65% 38%))`;
+};
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const fmtTime = ts => new Date(ts).toLocaleTimeString('id-ID',
+  { hour: '2-digit', minute: '2-digit' });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const objectURLs = new Set();
+function makeObjectURL(blob) {
+  const url = URL.createObjectURL(blob);
+  objectURLs.add(url);
+  return url;
+}
+function revokeAllObjectURLs() {
+  objectURLs.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} });
+  objectURLs.clear();
+}
+
+let toastT;
+function toast(msg, ms = 2800) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+let audioCtx = null;
+function playBeep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.09, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.13);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+  } catch(e){}
+}
+
+/* ============================================================
+   CRYPTO — PBKDF2-SHA256
+   ============================================================ */
+async function hashPassword(pw) {
+  const salt = 'mabar-v4-salt-2024';
+  if (window.crypto && crypto.subtle) {
+    try {
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw', enc.encode(pw), 'PBKDF2', false, ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name:'PBKDF2', salt: enc.encode(salt),
+          iterations: 100000, hash: 'SHA-256' },
+        key, 256
+      );
+      return 'pbkdf2$' + Array.from(new Uint8Array(bits))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch(e){}
+  }
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  const data = pw + salt;
+  for (let i = 0; i < data.length; i++) {
+    const c = data.charCodeAt(i);
+    h1 = ((h1 ^ c) * 0x01000193) >>> 0;
+    h2 = ((h2 ^ (c * (i + 1))) * 0x811c9dc5) >>> 0;
+  }
+  return 'fnv$' + h1.toString(16).padStart(8, '0') +
+    h2.toString(16).padStart(8, '0') + data.length.toString(16);
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const store = {
+  get(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
+  },
+  set(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); return true; }
+    catch { return false; }
+  },
+  del(key) { try { localStorage.removeItem(key); } catch(e){} }
+};
+
+const getUsers   = () => store.get(LS.users, []);
+const saveUsers  = arr => store.set(LS.users, arr);
+const getStickers = () => store.get(LS.stickers, []);
+const saveStickers = arr => store.set(LS.stickers, arr.slice(-30));
+const getAllHistory = () => store.get(LS.history, {});
+const getRoomHistory = code => getAllHistory()[code] || [];
+
+function saveRoomHistory(code, messages) {
+  const all = getAllHistory();
+  const trimmed = messages.filter(m => m.kind !== 'sys').slice(-150);
+  let copy = trimmed.slice();
+  while (copy.length > 0) {
+    try {
+      const candidate = { ...all, [code]: copy };
+      const json = JSON.stringify(candidate);
+      if (json.length < 2.2 * 1024 * 1024) {
+        localStorage.setItem(LS.history, json);
+        return;
+      }
+      copy.shift();
+    } catch { copy.shift(); }
+  }
+  try {
+    const fallback = { ...all };
+    delete fallback[code];
+    localStorage.setItem(LS.history, JSON.stringify(fallback));
+  } catch(e){}
+}
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+async function registerUser(username, password) {
+  const users = getUsers();
+  if (users.some(u => u.username.toLowerCase() === username.toLowerCase()))
+    throw new Error('Username "' + username + '" sudah dipakai di perangkat ini. Coba nama lain.');
+  const hash = await hashPassword(password);
+  const u = { username, hash, createdAt: Date.now() };
+  users.push(u);
+  saveUsers(users);
+  return u;
+}
+
+async function loginUser(username, password) {
+  const users = getUsers();
+  if (users.length === 0)
+    throw new Error('Belum ada akun di perangkat ini. Klik tab "Daftar" untuk buat akun baru.');
+  const u = users.find(x => x.username.toLowerCase() === username.toLowerCase());
+  if (!u)
+    throw new Error('Akun "' + username + '" tidak ditemukan. Akun yang ada: ' +
+      users.map(x => x.username).join(', ') + '.');
+  const hash = await hashPassword(password);
+  if (hash !== u.hash)
+    throw new Error('Password salah untuk akun "' + username + '". Coba lagi.');
+  return u;
+}
+
+function setSession(u) {
+  store.set(LS.session, { username: u.username, at: Date.now() });
+}
+function clearSession() { store.del(LS.session); }
+function loadSession() {
+  const s = store.get(LS.session, null);
+  if (!s) return null;
+  return getUsers().find(u => u.username === s.username) || null;
+}
+
+/* ============================================================
+   MEDIA HELPERS
+   ============================================================ */
+function bufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.byteLength; i += CH) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(binary);
+}
+function base64ToBuffer(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function compressImage(file, maxDim = 1600, quality = 0.72) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) return reject(new Error('Bukan file gambar'));
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round(height * maxDim / width);
+          width = maxDim;
+        } else {
+          width = Math.round(width * maxDim / height);
+          height = maxDim;
+        }
+      }
+      const cv = document.createElement('canvas');
+      cv.width = width; cv.height = height;
+      cv.getContext('2d').drawImage(img, 0, 0, width, height);
+      cv.toBlob(blob => {
+        if (!blob) return reject(new Error('Gagal kompres gambar'));
+        resolve(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => reject(new Error('File gambar rusak'));
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = () => reject(new Error('Gagal baca file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function imageToSticker(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) return reject(new Error('Bukan gambar'));
+    const img = new Image();
+    img.onload = () => {
+      const SIZE = 256;
+      const cv = document.createElement('canvas');
+      cv.width = SIZE; cv.height = SIZE;
+      const ctx = cv.getContext('2d');
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+      let url = cv.toDataURL('image/png');
+      if (url.length > 160000) url = cv.toDataURL('image/jpeg', 0.82);
+      resolve(url);
+    };
+    img.onerror = () => reject(new Error('Gambar rusak'));
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = () => reject(new Error('Gagal baca file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ============================================================
+   TEMA
+   ============================================================ */
+const THEMES = {
+  original: { label: 'Original', swatch: 'linear-gradient(135deg,#6ee7b7,#7c9cff)', vars: {
+    '--bg':'#0a0c11','--card':'#12151f','--line':'#222838','--txt':'#e7eaf2','--dim':'#8b93a7',
+    '--acc':'#6ee7b7','--acc2':'#7c9cff','--bad':'#ff7b8a','--warn':'#ffc46b',
+    '--mine-bg':'linear-gradient(135deg,#2a3a63,#382a5f)','--mine-txt':'#e7eaf2',
+    '--other-bg':'#1a2030','--other-txt':'#e7eaf2','--btn-bg':'#1a2030','--btn-hover':'#222a3e',
+    '--input-bg':'#0d111a',
+    '--page-bg':'radial-gradient(900px 500px at 15% -10%,#1b2544 0,transparent 60%),radial-gradient(700px 400px at 110% 10%,#2a1b3f 0,transparent 60%),#0a0c11'
+  }},
+  wa_dark: { label: 'WhatsApp Gelap', swatch: 'linear-gradient(135deg,#005c4b,#25d366)', vars: {
+    '--bg':'#0b141a','--card':'#111b21','--line':'#222d34','--txt':'#e9edef','--dim':'#8696a0',
+    '--acc':'#25d366','--acc2':'#00a884','--bad':'#f15c6d','--warn':'#f7b733',
+    '--mine-bg':'#005c4b','--mine-txt':'#e9edef','--other-bg':'#202c33','--other-txt':'#e9edef',
+    '--btn-bg':'#202c33','--btn-hover':'#2a3942','--input-bg':'#111b21','--page-bg':'#0b141a'
+  }},
+  wa_light: { label: 'WhatsApp Terang', swatch: 'linear-gradient(135deg,#d9fdd3,#25d366)', vars: {
+    '--bg':'#efeae2','--card':'#ffffff','--line':'#e0d9ce','--txt':'#111b21','--dim':'#667781',
+    '--acc':'#25d366','--acc2':'#00a884','--bad':'#e53935','--warn':'#f7b733',
+    '--mine-bg':'#d9fdd3','--mine-txt':'#111b21','--other-bg':'#ffffff','--other-txt':'#111b21',
+    '--btn-bg':'#f0f2f5','--btn-hover':'#e4e6eb','--input-bg':'#ffffff','--page-bg':'#efeae2'
+  }},
+  tiktok: { label: 'TikTok', swatch: 'linear-gradient(135deg,#fe2c55,#25f4ee)', vars: {
+    '--bg':'#000000','--card':'#121212','--line':'#2a2a2a','--txt':'#ffffff','--dim':'#888888',
+    '--acc':'#fe2c55','--acc2':'#25f4ee','--bad':'#ff4757','--warn':'#ffa502',
+    '--mine-bg':'linear-gradient(135deg,#fe2c55,#ff6b8b)','--mine-txt':'#ffffff',
+    '--other-bg':'#1c1c1c','--other-txt':'#ffffff','--btn-bg':'#1c1c1c','--btn-hover':'#2a2a2a',
+    '--input-bg':'#121212','--page-bg':'#000000'
+  }},
+  discord: { label: 'Discord', swatch: 'linear-gradient(135deg,#5865f2,#4752c4)', vars: {
+    '--bg':'#313338','--card':'#2b2d31','--line':'#1e1f22','--txt':'#f2f3f5','--dim':'#949ba4',
+    '--acc':'#5865f2','--acc2':'#4752c4','--bad':'#ed4245','--warn':'#faa61a',
+    '--mine-bg':'#5865f2','--mine-txt':'#ffffff','--other-bg':'#383a40','--other-txt':'#f2f3f5',
+    '--btn-bg':'#383a40','--btn-hover':'#40434a','--input-bg':'#1e1f22','--page-bg':'#313338'
+  }}
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.original;
+  Object.entries(t.vars).forEach(([k, v]) =>
+    document.documentElement.style.setProperty(k, v));
+  store.set(LS.theme, name);
+  const meta = document.querySelector('meta[name=theme-color]');
+  if (meta) meta.setAttribute('content', t.vars['--bg']);
+}
+
+function loadTheme() {
+  const saved = store.get(LS.theme, 'original');
+  applyTheme(saved);
+}
+
+/* ============================================================
+   UI SWITCH
+   ============================================================ */
+function showAuth() {
+  $('#view-auth').classList.remove('hidden');
+  $('#view-app').classList.add('hidden');
+  $('#auth-username').value = '';
+  $('#auth-password').value = '';
+  $('#auth-msg').textContent = '';
+  setTimeout(() => $('#auth-username').focus(), 50);
+}
+
+function showApp() {
+  $('#view-auth').classList.add('hidden');
+  $('#view-app').classList.remove('hidden');
+  updateTopbarAvatar();
+  showPane('lobby');
+}
+
+function showPane(which) {
+  $('#pane-lobby').classList.toggle('hidden', which !== 'lobby');
+  $('#pane-room').classList.toggle('hidden', which !== 'room');
+}
+
+function updateTopbarAvatar() {
+  if (!S.user) return;
+  const btn = $('#btn-profile');
+  btn.style.background = avatarGradient(S.user.username);
+  btn.textContent = S.user.username[0].toUpperCase();
+  btn.title = S.user.username;
+}
+
+function setRoomStatus(txt, cls) {
+  const el = $('#room-status');
+  el.textContent = txt;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function updateRoomTitle() {
+  if (!S.code) { $('#topbar-title').textContent = 'Mabar'; return; }
+  const n = Math.max(1, S.users.length);
+  $('#topbar-title').textContent = `Room ${S.code} · ${n} orang`;
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+function openModal(sel) { $(sel).classList.add('show'); }
+function closeModal(sel) { $(sel).classList.remove('show'); }
+function closeAllModals() {
+  $$('.modal').forEach(m => m.classList.remove('show'));
+  $('#attach-popup').classList.add('hidden');
+}
+
+/* ============================================================
+   AUTH MODE
+   ============================================================ */
+function setAuthMode(mode) {
+  S.authMode = mode;
+  $$('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  const info = $('#auth-info');
+  const submit = $('#auth-submit');
+  const pwInput = $('#auth-password');
+  const msgEl = $('#auth-msg');
+  msgEl.textContent = '';
+
+  if (mode === 'register') {
+    submit.textContent = 'Daftar Akun Baru';
+    pwInput.setAttribute('autocomplete', 'new-password');
+    pwInput.placeholder = 'min 4 karakter, contoh: 1234';
+    info.innerHTML = '🆕 <b>Buat akun baru.</b> Pilih username &amp; password sesukamu.<br>' +
+      'Username: 3-16 huruf/angka/underscore. Password: min 4 karakter.<br>' +
+      'Contoh password: <code>1234</code> <code>rahasia</code> <code>qwerty</code>';
+  } else {
+    submit.textContent = 'Masuk';
+    pwInput.setAttribute('autocomplete', 'current-password');
+    pwInput.placeholder = 'password akun kamu';
+    const accounts = getUsers().map(u => u.username);
+    info.innerHTML = accounts.length
+      ? '🔑 <b>Masuk ke akun yang sudah ada.</b><br>Akun di perangkat ini: <code>' +
+        accounts.slice(0, 5).map(esc).join('</code> <code>') + '</code>' +
+        (accounts.length > 5 ? ' …' : '')
+      : '🔑 <b>Masuk ke akun yang sudah ada.</b><br>Belum ada akun — klik tab <b>Daftar</b> dulu.';
+  }
+}
+
+/* ============================================================
+   CHAT RENDER
+   ============================================================ */
+function scrollChatBottom() {
+  const el = $('#chat');
+  el.scrollTop = el.scrollHeight;
+}
+
+function createMsgEl(msg, isMine) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg' + (isMine ? ' mine' : '');
+  wrap.dataset.mid = msg.id;
+  if (!isMine && msg.from) {
+    const from = document.createElement('div');
+    from.className = 'msg-from';
+    from.style.color = `hsl(${hueOf(msg.from)} 72% 72%)`;
+    from.textContent = msg.from;
+    from.onclick = () => openUserProfile(msg.from);
+    wrap.appendChild(from);
+  }
+  return wrap;
+}
+
+function appendTime(wrap, at) {
+  const t = document.createElement('div');
+  t.className = 'msg-time';
+  t.textContent = fmtTime(at || Date.now());
+  wrap.appendChild(t);
+}
+
+function appendTextMessage(msg, isMine) {
+  const wrap = createMsgEl(msg, isMine);
+  const b = document.createElement('div');
+  b.className = 'msg-bubble';
+  b.textContent = msg.text || '';
+  wrap.appendChild(b);
+  appendTime(wrap, msg.at);
+  $('#chat').appendChild(wrap);
+  scrollChatBottom();
+}
+
+function appendStickerMessage(msg, isMine) {
+  const wrap = createMsgEl(msg, isMine);
+  wrap.classList.add('sticker-msg');
+  const img = document.createElement('img');
+  img.className = 'sticker-img';
+  img.src = msg.img || '';
+  img.alt = 'stiker';
+  img.loading = 'lazy';
+  wrap.appendChild(img);
+  appendTime(wrap, msg.at);
+  $('#chat').appendChild(wrap);
+  scrollChatBottom();
+}
+
+function appendOmittedMedia(msg, isMine) {
+  const wrap = createMsgEl(msg, isMine);
+  const icon = msg.mediaKind === 'photo' ? '📷 Foto'
+    : msg.mediaKind === 'video' ? '🎥 Video' : '🎤 Pesan suara';
+  const d = document.createElement('div');
+  d.className = 'media-omitted';
+  d.textContent = icon + ' (tidak disimpan di riwayat)';
+  wrap.appendChild(d);
+  appendTime(wrap, msg.at);
+  $('#chat').appendChild(wrap);
+  scrollChatBottom();
+}
+
+function appendSys(text) {
+  const d = document.createElement('div');
+  d.className = 'msg sys';
+  d.textContent = text;
+  $('#chat').appendChild(d);
+  scrollChatBottom();
+}
+
+function buildMediaEl(meta, url) {
+  if (meta.mediaKind === 'photo') {
+    const img = document.createElement('img');
+    img.className = 'media-photo';
+    img.src = url;
+    img.alt = 'foto';
+    img.loading = 'lazy';
+    img.onclick = () => openLightbox('img', url);
+    return img;
+  }
+  if (meta.mediaKind === 'video') {
+    const v = document.createElement('video');
+    v.className = 'media-video';
+    v.src = url;
+    v.controls = true;
+    v.playsInline = true;
+    v.preload = 'metadata';
+    return v;
+  }
+  const a = document.createElement('audio');
+  a.className = 'voice-audio';
+  a.src = url;
+  a.controls = true;
+  a.preload = 'metadata';
+  return a;
+}
+
+function appendMediaMessage(meta, url, isMine) {
+  const wrap = createMsgEl(meta, isMine);
+  wrap.classList.add('media-msg');
+  wrap.appendChild(buildMediaEl(meta, url));
+  appendTime(wrap, meta.at);
+  $('#chat').appendChild(wrap);
+  scrollChatBottom();
+}
+
+function openLightbox(kind, url) {
+  const box = $('#lightbox-content');
+  box.innerHTML = '';
+  if (kind === 'img') {
+    const img = document.createElement('img');
+    img.src = url;
+    box.appendChild(img);
+  } else {
+    const v = document.createElement('video');
+    v.src = url; v.controls = true; v.autoplay = true; v.playsInline = true;
+    box.appendChild(v);
+  }
+  $('#lightbox').classList.add('show');
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function pushToHistory(msg) {
+  let entry;
+  if (msg.kind === 'media') {
+    entry = {
+      id: msg.id, from: msg.from, at: msg.at,
+      kind: 'media', mediaKind: msg.mediaKind,
+      name: msg.name || '', size: msg.size || 0
+    };
+  } else if (msg.kind === 'sticker') {
+    entry = { id: msg.id, from: msg.from, at: msg.at, kind:'sticker', img: msg.img };
+  } else {
+    entry = { id: msg.id, from: msg.from, at: msg.at, kind:'text', text: msg.text };
+  }
+  S.roomHistory.push(entry);
+  if (S.roomHistory.length > 300) S.roomHistory = S.roomHistory.slice(-300);
+  saveRoomHistory(S.code, S.roomHistory);
+}
+
+function renderHistoryToUI(code) {
+  const hist = getRoomHistory(code);
+  S.roomHistory = hist.slice();
+  $('#chat').innerHTML = '';
+  if (hist.length === 0) {
+    appendSys('Belum ada pesan. Mulai ngobrol atau bagikan kode ke temanmu!');
+    return;
+  }
+  hist.forEach(m => {
+    const isMine = m.from === S.user.username;
+    if (m.kind === 'text') appendTextMessage(m, isMine);
+    else if (m.kind === 'sticker') appendStickerMessage(m, isMine);
+    else if (m.kind === 'media') appendOmittedMedia(m, isMine);
+  });
+  scrollChatBottom();
+}
+
+/* ============================================================
+   HUB / CLIENT
+   ============================================================ */
+function hubIdFor(code) { return 'mabarhubv4-' + code; }
+
+function destroyPeer() {
+  if (S.peer) { try { S.peer.destroy(); } catch(e){} S.peer = null; }
+  S.conns = []; S.conn = null; S.users = []; S.isHub = false;
+}
+
+function sendToRoom(payload) {
+  if (S.isHub) {
+    S.conns.forEach(c => {
+      if (c.open) { try { c.send(payload); } catch(e){} }
+    });
+  } else if (S.conn && S.conn.open) {
+    try { S.conn.send(payload); } catch(e){}
+  }
+}
+
+function hubBroadcastExcluding(payload, exclude) {
+  S.conns.forEach(c => {
+    if (c === exclude) return;
+    if (c.open) { try { c.send(payload); } catch(e){} }
+  });
+}
+
+function becomeHub() {
+  S.isHub = true;
+  setRoomStatus('Tersambung ✅', 'ok');
+  S.users = [{ username: S.user.username }];
+  updateRoomTitle();
+  appendSys('Kamu masuk room. Bagikan kode ke teman.');
+}
+
+function setupHubConn(conn) {
+  conn.on('data', d => handleIncoming(d, conn));
+  conn.on('close', () => {
+    S.conns = S.conns.filter(c => c !== conn);
+    const uname = conn._username;
+    if (uname) {
+      appendSys(`${uname} keluar room.`);
+      hubBroadcastExcluding({ type: 'sys', text: `${uname} keluar room.` }, null);
+    }
+    hubRefreshUsers();
+  });
+  conn.on('error', () => {});
+}
+
+function hubRefreshUsers() {
+  const list = [{ username: S.user.username }];
+  S.conns.forEach(c => {
+    if (c._username && c._username !== S.user.username)
+      list.push({ username: c._username });
+  });
+  const seen = new Set();
+  S.users = list.filter(u => {
+    if (seen.has(u.username)) return false;
+    seen.add(u.username);
+    return true;
+  });
+  const payload = { type: 'users', users: S.users };
+  S.conns.forEach(c => { if (c.open) { try { c.send(payload); } catch(e){} } });
+  renderUsersInModal();
+  updateRoomTitle();
+}
+
+function tryClaimHub() {
+  if (!S.roomActive) return;
+  destroyPeer();
+  setRoomStatus('Menghubungkan...', 'wait');
+
+  const peer = new Peer(hubIdFor(S.code), PEER_CFG);
+  S.peer = peer;
+  let claimed = false;
+  let errored = false;
+
+  peer.on('open', () => {
+    claimed = true;
+    becomeHub();
+  });
+
+  peer.on('connection', conn => {
+    S.conns.push(conn);
+    setupHubConn(conn);
+  });
+
+  peer.on('disconnected', () => {
+    if (S.roomActive) {
+      try { peer.reconnect(); } catch(e){}
+    }
+  });
+
+  peer.on('error', err => {
+    if (errored) return;
+    errored = true;
+
+    if (err.type === 'unavailable-id' && !claimed) {
+      // Hub exists → become client
+      joinAsClient();
+    } else if (err.type === 'network' || err.type === 'server-error') {
+      setRoomStatus('Server sinyal sedang sibuk. Mencoba ulang...', 'wait');
+      setTimeout(() => { if (S.roomActive) tryClaimHub(); }, 3000);
+    } else if (err.type === 'peer-unavailable') {
+      // Handled in client
+    } else {
+      setRoomStatus('Error: ' + err.type + '. Mencoba ulang...', 'bad');
+      setTimeout(() => { if (S.roomActive) tryClaimHub(); }, 3000);
+    }
+  });
+}
+
+function joinAsClient() {
+  if (!S.roomActive) return;
+  destroyPeer();
+  setRoomStatus('Menghubungkan ke room...', 'wait');
+
+  const peer = new Peer(PEER_CFG);
+  S.peer = peer;
+
+  peer.on('open', () => {
+    connectToHub(peer);
+  });
+
+  peer.on('error', err => {
+    if (err.type === 'network' || err.type === 'server-error') {
+      setRoomStatus('Server sinyal sibuk. Mencoba ulang...', 'wait');
+      setTimeout(() => { if (S.roomActive) tryClaimHub(); }, 3000);
+    }
+  });
+
+  peer.on('disconnected', () => {
+    if (S.roomActive) { try { peer.reconnect(); } catch(e){} }
+  });
+}
+
+function connectToHub(peer) {
+  if (!S.roomActive) return;
+
+  const conn = peer.connect(hubIdFor(S.code), { reliable: true });
+  S.conn = conn;
+  let opened = false;
+
+  const timeout = setTimeout(() => {
+    if (!opened && S.roomActive) {
+      setRoomStatus('Mencoba ulang...', 'wait');
+      tryClaimHub();
+    }
+  }, 10000);
+
+  conn.on('open', () => {
+    opened = true;
+    clearTimeout(timeout);
+    S.reconnectAttempt = 0;
+    setRoomStatus('Tersambung ✅', 'ok');
+    try {
+      conn.send({ type: 'hello', username: S.user.username });
+      conn.send({ type: 'request-history' });
+    } catch(e){}
+  });
+
+  conn.on('data', d => handleIncoming(d, null));
+
+  conn.on('close', () => {
+    if (!S.roomActive) return;
+    setRoomStatus('Koneksi putus. Mencoba ulang...', 'wait');
+    scheduleReconnect();
+  });
+
+  conn.on('error', () => {
+    if (!opened && S.roomActive) {
+      clearTimeout(timeout);
+      scheduleReconnect();
+    }
+  });
+}
+
+function scheduleReconnect() {
+  if (!S.roomActive) return;
+  S.reconnectAttempt++;
+  const delay = Math.min(800 * S.reconnectAttempt, 3000);
+  setTimeout(() => {
+    if (!S.roomActive) return;
+    tryClaimHub();
+  }, delay);
+}
+
+/* ============================================================
+   INCOMING DATA
+   ============================================================ */
+function handleIncoming(d, fromConn) {
+  if (!d || typeof d !== 'object') return;
+
+  switch (d.type) {
+    case 'hello': {
+      if (!S.isHub || !fromConn) return;
+      const uname = String(d.username || 'Anon').slice(0, 16);
+      fromConn._username = uname;
+      try {
+        fromConn.send({ type: 'history', messages: S.roomHistory.slice(-100) });
+      } catch(e){}
+      hubRefreshUsers();
+      appendSys(`${uname} masuk room.`);
+      hubBroadcastExcluding({ type: 'sys', text: `${uname} masuk room.` }, fromConn);
+      try { fromConn.send({ type: 'tap', total: S.taps }); } catch(e){}
+      break;
+    }
+
+    case 'request-history': {
+      if (!S.isHub || !fromConn) return;
+      try { fromConn.send({ type: 'history', messages: S.roomHistory.slice(-100) }); } catch(e){}
+      break;
+    }
+
+    case 'msg': {
+      const msg = normalizeMsg(d);
+      if (!msg) return;
+      const isMine = msg.from === S.user.username;
+      if (msg.kind === 'text') appendTextMessage(msg, isMine);
+      else if (msg.kind === 'sticker') appendStickerMessage(msg, isMine);
+      pushToHistory(msg);
+      if (!isMine) playBeep();
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+
+    case 'media-start': {
+      handleMediaStart(d);
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+    case 'media-chunk': {
+      handleMediaChunk(d);
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+    case 'media-end': {
+      handleMediaEnd(d);
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+
+    case 'typing': {
+      if (d.from && d.from !== S.user.username) showTyping(d.from);
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+
+    case 'tap': {
+      if (S.isHub) {
+        S.taps++;
+        $('#tap-count').textContent = S.taps;
+        hubBroadcastExcluding({ type: 'tap', total: S.taps }, null);
+      } else {
+        S.taps = Number(d.total) || 0;
+        $('#tap-count').textContent = S.taps;
+      }
+      break;
+    }
+
+    case 'users': {
+      S.users = Array.isArray(d.users) ? d.users : [];
+      renderUsersInModal();
+      updateRoomTitle();
+      break;
+    }
+
+    case 'history': {
+      mergeHistoryFromHub(d.messages || []);
+      break;
+    }
+
+    case 'sys': {
+      appendSys(String(d.text || ''));
+      if (S.isHub && fromConn) hubBroadcastExcluding(d, fromConn);
+      break;
+    }
+
+    case 'rename': {
+      const oldName = String(d.from || '');
+      const newName = String(d.to || '');
+      if (!oldName || !newName) return;
+      S.users = S.users.map(u => u.username === oldName
+        ? { ...u, username: newName } : u);
+      renderUsersInModal();
+      updateRoomTitle();
+      appendSys(`${oldName} berganti nama menjadi ${newName}`);
+      if (S.isHub && fromConn) {
+        if (fromConn._username === oldName) fromConn._username = newName;
+        hubRefreshUsers();
+        hubBroadcastExcluding(d, fromConn);
+      }
+      break;
+    }
+  }
+}
+
+function normalizeMsg(d) {
+  const kind = (d.kind === 'sticker') ? 'sticker' : 'text';
+  const msg = {
+    id: d.id || uid(),
+    from: String(d.from || 'Anon').slice(0, 16),
+    kind,
+    text: kind === 'text' ? String(d.text || '').slice(0, 1000) : '',
+    img: kind === 'sticker' ? d.img : null,
+    at: Number(d.at) || Date.now()
+  };
+  if (kind === 'sticker' && !msg.img) return null;
+  if (kind === 'text' && !msg.text) return null;
+  return msg;
+}
+
+function mergeHistoryFromHub(hubMsgs) {
+  const byId = new Map();
+  S.roomHistory.forEach(m => byId.set(m.id, m));
+  hubMsgs.forEach(m => { if (m && m.id) byId.set(m.id, m); });
+  const merged = Array.from(byId.values()).sort((a, b) => (a.at || 0) - (b.at || 0));
+  S.roomHistory = merged;
+  saveRoomHistory(S.code, merged);
+  $('#chat').innerHTML = '';
+  if (merged.length === 0) {
+    appendSys('Belum ada pesan. Mulai ngobrol!');
+    return;
+  }
+  merged.forEach(m => {
+    const isMine = m.from === S.user.username;
+    if (m.kind === 'text') appendTextMessage(m, isMine);
+    else if (m.kind === 'sticker') appendStickerMessage(m, isMine);
+    else if (m.kind === 'media') appendOmittedMedia(m, isMine);
+  });
+  scrollChatBottom();
+}
+
+/* ============================================================
+   MEDIA TRANSFER
+   ============================================================ */
+function handleMediaStart(d) {
+  const meta = {
+    id: d.id, from: d.from, at: d.at,
+    mediaKind: d.mediaKind, mime: d.mime,
+    size: d.size, name: d.name,
+    chunks: d.chunks || 0
+  };
+  const isMine = meta.from === S.user.username;
+
+  const wrap = createMsgEl(meta, isMine);
+  wrap.classList.add('media-msg');
+  const placeholder = document.createElement('div');
+  placeholder.className = 'media-loading';
+  const icon = meta.mediaKind === 'photo' ? '📷'
+    : meta.mediaKind === 'video' ? '🎥' : '🎤';
+  const label = meta.mediaKind === 'photo' ? 'foto'
+    : meta.mediaKind === 'video' ? 'video' : 'suara';
+  placeholder.innerHTML = `
+    <div class="media-icon">${icon}</div>
+    <div class="media-label">Memuat ${label}... <span class="pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+  `;
+  wrap.appendChild(placeholder);
+  $('#chat').appendChild(wrap);
+  scrollChatBottom();
+
+  S.incomingMedia.set(meta.id, {
+    meta, chunks: new Map(), total: meta.chunks || 0, wrap
+  });
+}
+
+function handleMediaChunk(d) {
+  const m = S.incomingMedia.get(d.id);
+  if (!m) return;
+  m.chunks.set(d.seq, d.data);
+  const pct = Math.min(99, Math.round((m.chunks.size / m.total) * 100));
+  const pctEl = m.wrap.querySelector('.pct');
+  const fillEl = m.wrap.querySelector('.progress-fill');
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (fillEl) fillEl.style.width = pct + '%';
+}
+
+function handleMediaEnd(d) {
+  const m = S.incomingMedia.get(d.id);
+  if (!m) return;
+  try {
+    const buffers = [];
+    for (let i = 0; i < m.total; i++) {
+      if (m.chunks.has(i)) buffers.push(base64ToBuffer(m.chunks.get(i)));
+    }
+    if (buffers.length === 0) throw new Error('Tidak ada data');
+    const blob = new Blob(buffers, { type: m.meta.mime });
+    const url = makeObjectURL(blob);
+    const placeholder = m.wrap.querySelector('.media-loading');
+    if (placeholder) placeholder.replaceWith(buildMediaEl(m.meta, url));
+  } catch (e) {
+    const placeholder = m.wrap.querySelector('.media-loading');
+    if (placeholder) {
+      placeholder.className = 'media-omitted';
+      placeholder.textContent = 'Gagal memuat media';
+    }
+  }
+  appendTime(m.wrap, m.meta.at);
+  S.incomingMedia.delete(d.id);
+  scrollChatBottom();
+  if (m.meta.from !== S.user.username) playBeep();
+  pushToHistory({ ...m.meta, kind: 'media' });
+}
+
+async function sendMediaFile(file, kind) {
+  if (!S.roomActive) { toast('Belum masuk room'); return; }
+  if (S.mediaSending) { toast('Sedang mengirim media. Tunggu selesai.'); return; }
+
+  const limits = { photo: MAX_PHOTO, video: MAX_VIDEO, voice: MAX_VOICE };
+  if (file.size > limits[kind]) {
+    toast(`File terlalu besar. Maks ${Math.round(limits[kind]/1024/1024)}MB.`);
+    return;
+  }
+
+  S.mediaSending = true;
+  try {
+    let blob = file;
+    if (kind === 'photo') {
+      try { blob = await compressImage(file); }
+      catch (e) { toast(e.message || 'Gagal kompres gambar'); return; }
+    }
+
+    const id = uid();
+    const meta = {
+      id, from: S.user.username, at: Date.now(),
+      mediaKind: kind,
+      mime: blob.type || 'application/octet-stream',
+      size: blob.size,
+      name: file.name || ''
+    };
+
+    const url = makeObjectURL(blob);
+    appendMediaMessage(meta, url, true);
+    pushToHistory({ ...meta, kind: 'media' });
+
+    const buf = await blob.arrayBuffer();
+    const totalChunks = Math.max(1, Math.ceil(buf.byteLength / CHUNK_SIZE));
+
+    sendToRoom({ type: 'media-start', ...meta, chunks: totalChunks });
+
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, buf.byteLength);
+      const slice = buf.slice(start, end);
+      sendToRoom({
+        type: 'media-chunk',
+        id, seq: i,
+        data: bufferToBase64(slice)
+      });
+      if (i % 8 === 7) await sleep(5);
+    }
+
+    sendToRoom({ type: 'media-end', id });
+  } finally {
+    S.mediaSending = false;
+  }
+}
+
+/* ============================================================
+   VOICE
+   ============================================================ */
+let voiceRecorder = null;
+let voiceChunks = [];
+let voiceTimerInt = null;
+let voiceStartAt = 0;
+let voiceStream = null;
+let voiceBlob = null;
+
+async function startVoiceRecording() {
+  if (IS_FILE) {
+    toast('Rekam suara butuh HTTPS. Host file ini di Netlify/GitHub Pages (gratis).', 5000);
+    return;
+  }
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    let msg = 'Mikrofon tidak bisa diakses.';
+    if (e.name === 'NotAllowedError') msg = 'Izin mikrofon ditolak. Cek pengaturan browser.';
+    else if (e.name === 'NotFoundError') msg = 'Tidak ada mikrofon terdeteksi.';
+    else if (e.name === 'NotReadableError') msg = 'Mikrofon sedang dipakai aplikasi lain.';
+    toast(msg, 4000);
+    return;
+  }
+
+  let mime = '';
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm',
+    'audio/mp4', 'audio/ogg;codecs=opus'];
+  for (const c of candidates) {
+    if (window.MediaRecorder && MediaRecorder.isTypeSupported(c)) {
+      mime = c; break;
+    }
+  }
+  if (!window.MediaRecorder) {
+    toast('Browser tidak mendukung perekaman audio.');
+    voiceStream.getTracks().forEach(t => t.stop());
+    voiceStream = null;
+    return;
+  }
+
+  try {
+    voiceRecorder = new MediaRecorder(voiceStream, mime ? { mimeType: mime } : {});
+  } catch (e) {
+    toast('Gagal membuat perekam: ' + e.message);
+    voiceStream.getTracks().forEach(t => t.stop());
+    voiceStream = null;
+    return;
+  }
+
+  voiceChunks = [];
+  voiceRecorder.ondataavailable = e => {
+    if (e.data.size > 0) voiceChunks.push(e.data);
+  };
+  voiceRecorder.onstop = () => {
+    voiceBlob = new Blob(voiceChunks, { type: voiceRecorder.mimeType || 'audio/webm' });
+    if (voiceStream) {
+      voiceStream.getTracks().forEach(t => t.stop());
+      voiceStream = null;
+    }
+    if (voiceBlob.size < 500) {
+      toast('Rekaman terlalu pendek');
+      resetVoiceUI();
+      return;
+    }
+    if (voiceBlob.size > MAX_VOICE) {
+      toast('Rekaman terlalu panjang');
+      resetVoiceUI();
+      return;
+    }
+    const url = makeObjectURL(voiceBlob);
+    $('#voice-audio').src = url;
+    $('#voice-recording').classList.add('hidden');
+    $('#voice-preview').classList.remove('hidden');
+  };
+
+  voiceRecorder.start();
+  voiceStartAt = Date.now();
+  $('#btn-voice-start').classList.add('hidden');
+  $('#btn-voice-stop').classList.remove('hidden');
+  $('#voice-timer').innerHTML = '<span class="rec-dot"></span>00:00';
+
+  voiceTimerInt = setInterval(() => {
+    const sec = Math.floor((Date.now() - voiceStartAt) / 1000);
+    const mm = String(Math.floor(sec / 60)).padStart(2, '0');
+    const ss = String(sec % 60).padStart(2, '0');
+    $('#voice-timer').innerHTML = `<span class="rec-dot"></span>${mm}:${ss}`;
+    if (sec >= 120) stopVoiceRecording();
+  }, 250);
+}
+
+function stopVoiceRecording() {
+  if (voiceTimerInt) { clearInterval(voiceTimerInt); voiceTimerInt = null; }
+  if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+    try { voiceRecorder.stop(); } catch(e){}
+  }
+  $('#btn-voice-start').classList.remove('hidden');
+  $('#btn-voice-stop').classList.add('hidden');
+}
+
+function resetVoiceUI() {
+  if (voiceTimerInt) { clearInterval(voiceTimerInt); voiceTimerInt = null; }
+  if (voiceStream) { voiceStream.getTracks().forEach(t => t.stop()); voiceStream = null; }
+  if (voiceRecorder && voiceRecorder.state !== 'inactive') {
+    try { voiceRecorder.stop(); } catch(e){}
+  }
+  voiceRecorder = null;
+  voiceBlob = null;
+  $('#voice-recording').classList.remove('hidden');
+  $('#voice-preview').classList.add('hidden');
+  $('#btn-voice-start').classList.remove('hidden');
+  $('#btn-voice-stop').classList.add('hidden');
+  $('#voice-timer').textContent = '00:00';
+  $('#voice-audio').removeAttribute('src');
+}
+
+/* ============================================================
+   SEND TEXT / STICKER
+   ============================================================ */
+function sendTextMessage() {
+  const input = $('#input-chat');
+  const text = input.value.trim();
+  if (!text || !S.roomActive) return;
+  input.value = '';
+  const msg = {
+    id: uid(), from: S.user.username,
+    kind: 'text', text: text.slice(0, 1000), at: Date.now()
+  };
+  appendTextMessage(msg, true);
+  pushToHistory(msg);
+  sendToRoom({ type: 'msg', ...msg });
+}
+
+function sendSticker(dataUrl) {
+  if (!S.roomActive) return;
+  const msg = {
+    id: uid(), from: S.user.username,
+    kind: 'sticker', img: dataUrl, at: Date.now()
+  };
+  appendStickerMessage(msg, true);
+  pushToHistory(msg);
+  sendToRoom({ type: 'msg', ...msg });
+  closeModal('#modal-stickers');
+}
+
+/* ============================================================
+   TYPING
+   ============================================================ */
+function notifyTyping() {
+  if (!S.roomActive) return;
+  const now = Date.now();
+  if (now - S.lastTypingSent < 1200) return;
+  S.lastTypingSent = now;
+  sendToRoom({ type: 'typing', from: S.user.username });
+}
+
+function showTyping(who) {
+  const el = $('#typing');
+  el.textContent = `${who} sedang mengetik...`;
+  el.classList.add('show');
+  clearTimeout(S.typingTimeout);
+  S.typingTimeout = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   PROFILE & USERS
+   ============================================================ */
+function openUserProfile(name) {
+  $('#profile-avatar').style.background = avatarGradient(name);
+  $('#profile-avatar').textContent = (name[0] || '?').toUpperCase();
+  $('#profile-name').textContent = name;
+  const isMe = name === S.user.username;
+  $('#profile-meta').textContent = isMe ? 'Kamu sendiri' : 'Anggota room';
+  $('#btn-open-changename').style.display = isMe ? 'block' : 'none';
+  openModal('#modal-profile');
+}
+
+function renderUsersInModal() {
+  const box = $('#users-list');
+  if (!box) return;
+  box.innerHTML = '';
+  const all = new Set();
+  if (S.user) all.add(S.user.username);
+  S.users.forEach(u => { if (u.username) all.add(u.username); });
+
+  all.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'user-chip';
+    chip.innerHTML = `
+      <span class="dot" style="background:${avatarGradient(name)}">${esc(name[0].toUpperCase())}</span>
+      <span style="flex:1">${esc(name)}${name === S.user.username
+        ? ' <span class="muted small">(kamu)</span>' : ''}</span>
+    `;
+    chip.onclick = () => { closeModal('#modal-users'); openUserProfile(name); };
+    box.appendChild(chip);
+  });
+  if (all.size === 1) {
+    const p = document.createElement('p');
+    p.className = 'muted small';
+    p.style.margin = '8px 0 0';
+    p.textContent = 'Kamu sendirian. Ajak teman masuk pakai kode yang sama.';
+    box.appendChild(p);
+  }
+}
+
+/* ============================================================
+   CHANGE NAME
+   ============================================================ */
+async function doChangeName() {
+  const newName = $('#input-newname').value.trim();
+  const msgEl = $('#changename-msg');
+  msgEl.textContent = '';
+
+  if (newName.length < 3) { msgEl.textContent = 'Minimal 3 karakter'; return; }
+  if (newName.length > 16) { msgEl.textContent = 'Maksimal 16 karakter'; return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(newName)) {
+    msgEl.textContent = 'Hanya huruf, angka, underscore'; return;
+  }
+  if (newName === S.user.username) {
+    msgEl.textContent = 'Itu nama kamu sekarang'; return;
+  }
+
+  const users = getUsers();
+  const other = users.find(u =>
+    u.username.toLowerCase() === newName.toLowerCase() &&
+    u.username !== S.user.username);
+  if (other) {
+    msgEl.textContent = 'Nama "' + newName + '" sudah dipakai akun lain'; return;
+  }
+
+  const oldName = S.user.username;
+  const u = users.find(x => x.username === oldName);
+  if (!u) { msgEl.textContent = 'Akun tidak ditemukan'; return; }
+
+  u.username = newName;
+  saveUsers(users);
+  S.user.username = newName;
+  setSession(S.user);
+  updateTopbarAvatar();
+
+  if (S.roomActive) {
+    sendToRoom({ type: 'rename', from: oldName, to: newName });
+    if (S.isHub) {
+      S.users = S.users.map(x =>
+        x.username === oldName ? { ...x, username: newName } : x);
+      hubRefreshUsers();
+    }
+  }
+
+  closeModal('#modal-changename');
+  toast('Nama berhasil diubah menjadi "' + newName + '"');
+}
+
+/* ============================================================
+   ROOM ENTER / LEAVE
+   ============================================================ */
+function enterRoom() {
+  const code = norm($('#input-room-code').value);
+  if (code.length < 3) {
+    toast('Kode room minimal 3 huruf/angka');
+    $('#input-room-code').focus();
+    return;
+  }
+
+  S.code = code;
+  S.roomActive = true;
+  S.taps = 0;
+  S.reconnectAttempt = 0;
+  S.roomHistory = [];
+  S.incomingMedia.clear();
+
+  $('#room-code-display').textContent = code;
+  $('#tap-count').textContent = '0';
+  $('#chat').innerHTML = '';
+  showPane('room');
+  setRoomStatus('Menghubungkan...', 'wait');
+  $('#topbar-title').textContent = `Room ${code}`;
+
+  renderHistoryToUI(code);
+  tryClaimHub();
+}
+
+function leaveRoom() {
+  S.roomActive = false;
+  destroyPeer();
+  revokeAllObjectURLs();
+  S.incomingMedia.clear();
+  S.code = '';
+  S.roomHistory = [];
+  S.taps = 0;
+  $('#chat').innerHTML = '';
+  $('#input-chat').value = '';
+  setRoomStatus('Menghubungkan...', '');
+  showPane('lobby');
+  $('#topbar-title').textContent = 'Mabar';
+}
+
+/* ============================================================
+   FULLSCREEN
+   ============================================================ */
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+    else await document.exitFullscreen();
+  } catch (e) {
+    toast('Fullscreen tidak didukung di browser ini');
+  }
+}
+
+/* ============================================================
+   VIEWPORT
+   ============================================================ */
+function setupViewport() {
+  const setH = () => {
+    const h = (window.visualViewport && window.visualViewport.height)
+      || window.innerHeight;
+    document.documentElement.style.setProperty('--app-h', h + 'px');
+  };
+  setH();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', setH);
+    window.visualViewport.addEventListener('scroll', setH);
+  }
+  window.addEventListener('resize', setH);
+}
+
+/* ============================================================
+   STICKER / THEME UI
+   ============================================================ */
+function renderStickerGrid() {
+  const box = $('#sticker-grid');
+  box.innerHTML = '';
+  const list = getStickers();
+  if (list.length === 0) {
+    const p = document.createElement('p');
+    p.className = 'muted small';
+    p.style.gridColumn = '1/-1';
+    p.textContent = 'Belum ada stiker. Klik "Unggah Gambar" untuk bikin.';
+    box.appendChild(p);
+    return;
+  }
+  list.forEach(url => {
+    const img = document.createElement('img');
+    img.className = 'sticker-thumb';
+    img.src = url;
+    img.alt = 'stiker';
+    img.onclick = () => sendSticker(url);
+    box.appendChild(img);
+  });
+}
+
+function renderThemeGrid() {
+  const box = $('#theme-grid');
+  box.innerHTML = '';
+  const current = store.get(LS.theme, 'original');
+  Object.entries(THEMES).forEach(([key, t]) => {
+    const div = document.createElement('div');
+    div.className = 'theme-opt' + (key === current ? ' active' : '');
+    div.innerHTML = `<div class="swatch" style="background:${t.swatch}"></div>${esc(t.label)}`;
+    div.onclick = () => {
+      applyTheme(key);
+      renderThemeGrid();
+      toast('Tema: ' + t.label);
+    };
+    box.appendChild(div);
+  });
+}
+
+/* ============================================================
+   EVENT BINDINGS
+   ============================================================ */
+function bindAuth() {
+  $$('.tab').forEach(t => {
+    t.addEventListener('click', () => setAuthMode(t.dataset.mode));
+  });
+
+  $('#auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = $('#auth-username').value.trim();
+    const password = $('#auth-password').value;
+    const msg = $('#auth-msg');
+    const btn = $('#auth-submit');
+    msg.textContent = '';
+
+    if (username.length < 3) { msg.textContent = 'Username minimal 3 karakter'; return; }
+    if (username.length > 16) { msg.textContent = 'Username maksimal 16 karakter'; return; }
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      msg.textContent = 'Username hanya huruf, angka, underscore (tanpa spasi)'; return;
+    }
+    if (password.length < 4) {
+      msg.textContent = 'Password minimal 4 karakter. Contoh: 1234'; return;
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Memproses...';
+
+    try {
+      let user;
+      if (S.authMode === 'register') {
+        user = await registerUser(username, password);
+        toast('Akun "' + username + '" berhasil dibuat!');
+      } else {
+        user = await loginUser(username, password);
+        toast('Selamat datang, ' + username);
+      }
+      S.user = user;
+      setSession(user);
+      showApp();
+    } catch (err) {
+      msg.textContent = err.message || 'Terjadi kesalahan';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  });
+}
+
+function bindApp() {
+  // Topbar
+  $('#btn-profile').addEventListener('click', () => openUserProfile(S.user.username));
+  $('#btn-fullscreen').addEventListener('click', toggleFullscreen);
+  $('#btn-menu').addEventListener('click', () => openModal('#modal-menu'));
+
+  // Lobby
+  $('#btn-enter-room').addEventListener('click', enterRoom);
+  $('#input-room-code').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); enterRoom(); }
+  });
+
+  // Room
+  $('#btn-share').addEventListener('click', async () => {
+    const url = location.origin + location.pathname + '?room=' +
+      encodeURIComponent(S.code);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Mabar Chat',
+          text: `Kode room: ${S.code}`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast('Link disalin');
+      }
+    } catch {
+      try {
+        await navigator.clipboard.writeText(S.code);
+        toast('Kode disalin: ' + S.code);
+      } catch {
+        prompt('Salin manual:', S.code);
+      }
+    }
+  });
+  $('#btn-leave').addEventListener('click', leaveRoom);
+
+  // Composer
+  $('#btn-send').addEventListener('click', sendTextMessage);
+  $('#input-chat').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendTextMessage(); }
+  });
+  $('#input-chat').addEventListener('input', notifyTyping);
+
+  // Attach
+  $('#btn-attach').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#attach-popup').classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#attach-popup') && !e.target.closest('#btn-attach'))
+      $('#attach-popup').classList.add('hidden');
+  });
+
+  $$('#attach-popup button').forEach(b => {
+    b.addEventListener('click', () => {
+      const kind = b.dataset.attach;
+      $('#attach-popup').classList.add('hidden');
+      if (kind === 'photo') $('#input-photo').click();
+      else if (kind === 'video') $('#input-video').click();
+      else if (kind === 'voice') {
+        resetVoiceUI();
+        openModal('#modal-voice');
+      }
+    });
+  });
+
+  $('#input-photo').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (f) await sendMediaFile(f, 'photo');
+  });
+  $('#input-video').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (f) await sendMediaFile(f, 'video');
+  });
+
+  // Voice
+  $('#btn-voice-start').addEventListener('click', startVoiceRecording);
+  $('#btn-voice-stop').addEventListener('click', stopVoiceRecording);
+  $('#btn-voice-cancel').addEventListener('click', resetVoiceUI);
+  $('#btn-voice-send').addEventListener('click', async () => {
+    if (!voiceBlob) return;
+    const blob = voiceBlob;
+    const mime = blob.type || 'audio/webm';
+    const ext = mime.includes('mp4') ? 'm4a' : 'webm';
+    const file = new File([blob], 'voice-' + Date.now() + '.' + ext, { type: mime });
+    closeModal('#modal-voice');
+    resetVoiceUI();
+    await sendMediaFile(file, 'voice');
+  });
+
+  // Sticker
+  $('#btn-open-stickers').addEventListener('click', () => {
+    renderStickerGrid();
+    openModal('#modal-stickers');
+  });
+  $('#sticker-file').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    try {
+      const url = await imageToSticker(f);
+      const list = getStickers();
+      list.push(url);
+      saveStickers(list);
+      renderStickerGrid();
+      toast('Stiker disimpan');
+    } catch (err) {
+      toast(err.message || 'Gagal memproses');
+    }
+  });
+
+  // Tap
+  $('#btn-tap').addEventListener('click', () => {
+    if (!S.roomActive) return;
+    if (S.isHub) {
+      S.taps++;
+      $('#tap-count').textContent = S.taps;
+      S.conns.forEach(c => {
+        if (c.open) { try { c.send({ type: 'tap', total: S.taps }); } catch(e){} }
+      });
+    } else if (S.conn && S.conn.open) {
+      S.taps++;
+      $('#tap-count').textContent = S.taps;
+      try { S.conn.send({ type: 'tap' }); } catch(e){}
+    } else {
+      S.taps++;
+      $('#tap-count').textContent = S.taps;
+    }
+    const b = $('#btn-tap');
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+  });
+
+  // Menu
+  $('#menu-users').addEventListener('click', () => {
+    renderUsersInModal();
+    openModal('#modal-users');
+  });
+  $('#menu-theme').addEventListener('click', () => {
+    closeModal('#modal-menu');
+    renderThemeGrid();
+    openModal('#modal-theme');
+  });
+  $('#menu-history').addEventListener('click', () => {
+    const all = getAllHistory();
+    const rooms = Object.keys(all);
+    const box = $('#history-list');
+    box.innerHTML = '';
+    if (rooms.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'muted small';
+      p.textContent = 'Belum ada riwayat.';
+      box.appendChild(p);
+    } else {
+      rooms.forEach(code => {
+        const msgs = all[code];
+        const last = msgs[msgs.length - 1];
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        let preview = 'kosong';
+        if (last) {
+          if (last.kind === 'text') preview = last.text.slice(0, 40);
+          else if (last.kind === 'sticker') preview = '😊 Stiker';
+          else if (last.kind === 'media') preview =
+            last.mediaKind === 'photo' ? '📷 Foto' :
+            last.mediaKind === 'video' ? '🎥 Video' : '🎤 Suara';
+        }
+        item.innerHTML = `<div style="font-weight:600">Room ${esc(code)}</div>
+          <div class="muted small">${msgs.length} pesan · ${last ? fmtTime(last.at) : ''}</div>
+          <div class="muted small" style="margin-top:4px">Terakhir: ${esc(preview)}</div>`;
+        item.onclick = () => {
+          closeAllModals();
+          if (S.roomActive) leaveRoom();
+          $('#input-room-code').value = code;
+          enterRoom();
+        };
+        box.appendChild(item);
+      });
+    }
+    openModal('#modal-history');
+  });
+  $('#menu-logout').addEventListener('click', () => {
+    if (S.roomActive) leaveRoom();
+    clearSession();
+    S.user = null;
+    closeAllModals();
+    showAuth();
+    toast('Kamu keluar dari akun');
+  });
+
+  // Change name
+  $('#btn-open-changename').addEventListener('click', () => {
+    $('#input-newname').value = S.user.username;
+    $('#changename-msg').textContent = '';
+    closeModal('#modal-profile');
+    openModal('#modal-changename');
+    setTimeout(() => $('#input-newname').focus(), 50);
+  });
+  $('#btn-do-changename').addEventListener('click', doChangeName);
+  $('#input-newname').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doChangeName(); }
+  });
+
+  // Lightbox
+  $('#lightbox').addEventListener('click', () => {
+    $('#lightbox').classList.remove('show');
+    $('#lightbox-content').innerHTML = '';
+  });
+
+  // Modal close
+  document.addEventListener('click', e => {
+    if (e.target.matches('[data-close]') ||
+        (e.target.classList && e.target.classList.contains('modal'))) {
+      closeAllModals();
+    }
+  });
+
+  // ESC
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeAllModals();
+      $('#lightbox').classList.remove('show');
+    }
+  });
+
+  // Periodic save
+  setInterval(() => {
+    if (S.roomActive && S.code && S.roomHistory.length)
+      saveRoomHistory(S.code, S.roomHistory);
+  }, 10000);
+
+  // Unload
+  window.addEventListener('beforeunload', () => {
+    if (S.peer) { try { S.peer.destroy(); } catch(e){} }
+    if (voiceStream) voiceStream.getTracks().forEach(t => t.stop());
+  });
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+function boot() {
+  setupViewport();
+  loadTheme();
+  bindAuth();
+  bindApp();
+
+  try {
+    const q = new URLSearchParams(location.search).get('room');
+    if (q) $('#input-room-code').value = norm(q);
+  } catch(e){}
+
+  const sess = loadSession();
+  if (sess) {
+    S.user = sess;
+    showApp();
+    toast('Selamat datang kembali, ' + sess.username);
+    return;
+  }
+
+  const accounts = getUsers();
+  setAuthMode(accounts.length === 0 ? 'register' : 'login');
+  showAuth();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
